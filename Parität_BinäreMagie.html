@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Binäre Magie – Entdecke den Fehler</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #f7f7f7;
+    }
+    h1 {
+      color: #333;
+    }
+    #grid {
+      display: grid;
+      grid-gap: 6px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .cell {
+      width: 60px;
+      height: 60px;
+      font-size: 24px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .error {
+      background-color: #ff4d4d;
+      color: white;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 16px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 15px;
+      font-size: 18px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🧠 Binäre Magie – Entdecke den Fehler</h1>
+
+<button onclick="startMode1()">✍️ Eigenes Muster erstellen</button>
+<button onclick="startMode2()">🧠 Automatische Lösung zeigen</button>
+<br>
+<div id="grid"></div>
+
+<div id="result"></div>
+<div id="actions"></div>
+
+<script>
+  let grid = [];
+  let gridSize = 5;
+  let mode = 1;
+  const gridElement = document.getElementById("grid");
+  const result = document.getElementById("result");
+  const actions = document.getElementById("actions");
+
+  function startMode1() {
+    mode = 1;
+    gridSize = 5;
+    grid = Array.from({ length: 5 }, () => Array(5).fill(0));
+    renderGrid();
+    result.textContent = "";
+    actions.innerHTML = `<button onclick="addEmptyRowCol()">➕ Feld ergänzen</button>`;
+  }
+
+  function addEmptyRowCol() {
+    // Nur wenn noch keine Ergänzung gemacht wurde
+    if (grid.length === 6) return;
+
+    // Bestehende Zeilen um Spalte erweitern
+    for (let i = 0; i < grid.length; i++) {
+      grid[i].push(0);
+    }
+
+    // Neue Zeile mit 0 ergänzen
+    const newRow = Array(grid[0].length).fill(0);
+    grid.push(newRow);
+    gridSize = 6;
+    renderGrid();
+  }
+
+  function startMode2() {
+    mode = 2;
+    gridSize = 6;
+    grid = [];
+    for (let i = 0; i < 5; i++) {
+      grid[i] = [];
+      for (let j = 0; j < 5; j++) {
+        grid[i][j] = Math.round(Math.random());
+      }
+    }
+
+    for (let i = 0; i < 5; i++) {
+      const rowSum = grid[i].reduce((a, b) => a + b, 0);
+      grid[i].push(rowSum % 2 === 0 ? 0 : 1);
+    }
+
+    const lastRow = [];
+    for (let j = 0; j < 6; j++) {
+      let colSum = 0;
+      for (let i = 0; i < 5; i++) {
+        colSum += grid[i][j];
+      }
+      lastRow.push(colSum % 2 === 0 ? 0 : 1);
+    }
+    grid.push(lastRow);
+
+    actions.innerHTML = `<button onclick="startMode2()">🔄 Neu starten</button>`;
+    renderGrid();
+    result.textContent = "Klicke ein beliebiges Bit, um einen Fehler zu simulieren.";
+  }
+
+  function renderGrid() {
+    gridElement.innerHTML = "";
+    gridElement.style.gridTemplateColumns = `repeat(${gridSize}, 60px)`;
+
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.textContent = grid[i][j];
+        cell.dataset.row = i;
+        cell.dataset.col = j;
+        cell.onclick = () => handleClick(i, j);
+        gridElement.appendChild(cell);
+      }
+    }
+  }
+
+  function handleClick(i, j) {
+    grid[i][j] ^= 1;
+    renderGrid();
+
+    if (mode === 2 && gridSize === 6) {
+      const [errRow, errCol] = findError();
+      markError(errRow, errCol);
+    }
+  }
+
+  function findError() {
+    let errorRow = -1;
+    let errorCol = -1;
+
+    for (let i = 0; i < 6; i++) {
+      if (grid[i].reduce((a, b) => a + b, 0) % 2 !== 0) {
+        errorRow = i;
+      }
+    }
+
+    for (let j = 0; j < 6; j++) {
+      let colSum = 0;
+      for (let i = 0; i < 6; i++) {
+        colSum += grid[i][j];
+      }
+      if (colSum % 2 !== 0) {
+        errorCol = j;
+      }
+    }
+
+    return [errorRow, errorCol];
+  }
+
+  function markError(row, col) {
+    const index = row * gridSize + col;
+    const allCells = document.querySelectorAll(".cell");
+    if (row !== -1 && col !== -1) {
+      allCells[index].classList.add("error");
+      result.textContent = `❗ Fehler erkannt bei: Zeile ${row + 1}, Spalte ${col + 1}`;
+    } else {
+      result.textContent = "Kein Fehler erkannt oder mehrere gleichzeitig.";
+    }
+  }
+</script>
+
+</body>
+</html>
